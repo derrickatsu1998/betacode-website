@@ -1,0 +1,35 @@
+{% load static %}  <!-- ✅ This MUST be the first line -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BetaCode Software Solutions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; }
+        .hero { height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .btn-custom { background: #f59e0b; color: #0f172a; font-weight: bold; padding: 12px 30px; border-radius: 30px; text-decoration: none; }
+        
+        /* Style the SVG logo */
+        .logo-svg {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)); /* Optional glow effect */
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div>
+            <!-- ✅ Using the SVG -->
+            <img src="{% static 'images/betacode-logo.svg' %}" alt="BetaCode Logo" class="logo-svg">
+            
+            <h1 class="display-3 fw-bold">BetaCode</h1>
+            <p class="lead mb-4">Software Solutions and Consultancy</p>
+            <a href="#" class="btn-custom">Client Login (Coming Soon)</a>
+        </div>
+    </div>
+</body>
+</html>

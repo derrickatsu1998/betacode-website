@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BetaCode Developer Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; }
+        .card { background: #1e293b; color: white; border: none; border-radius: 10px; }
+        .card-header { border-bottom: 1px solid #334155; }
+        .bg-light-dark { background: #334155; padding: 15px; border-radius: 8px; }
+        .text-muted { color: #94a3b8 !important; }
+    </style>
+</head>
+<body>
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-code text-warning me-2"></i> BetaCode Developer Console</h2>
+        <span class="badge bg-primary px-3 py-2">Connected to SIMS</span>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        {% for bug in bugs %}
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 border-start border-4 {% if bug.status == 'open' %}border-danger{% else %}border-success{% endif %}">
+                <div class="card-header d-flex justify-content-between pt-3 bg-transparent">
+                    <h5 class="fw-bold mb-0">{{ bug.title }}</h5>
+                    <span class="badge {% if bug.status == 'open' %}bg-danger{% else %}bg-success{% endif %}">{{ bug.status|upper }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-2">Reported by: {{ bug.reporter }} | {{ bug.created_at }}</p>
+                    <div class="bg-light-dark mb-3">{{ bug.description }}</div>
+                    
+                    <div class="row g-2 mb-3">
+                        {% if bug.screenshot %}
+                        <div class="col-6">
+                            <a href="{{ bug.screenshot }}" target="_blank">
+                                <img src="{{ bug.screenshot }}" class="img-fluid rounded" style="max-height: 100px;">
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% if bug.voice_note %}
+                        <div class="col-6">
+                            <audio controls class="w-100" style="height: 40px;">
+                                <source src="{{ bug.voice_note }}" type="audio/mpeg">
+                            </audio>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                    <small class="text-muted"><i class="fas fa-link"></i> {{ bug.page_url }}</small>
+                    {% if bug.status == 'open' %}
+                    <a href="{% url 'resolve_bug_remote' bug.id %}" class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-check"></i> Mark Resolved
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <h4 class="text-muted">No bugs reported yet! 🎉</h4>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

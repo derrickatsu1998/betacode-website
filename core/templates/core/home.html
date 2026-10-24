@@ -1,0 +1,487 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetaCode | Software Solutions & Consultancy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0b1120;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --accent: #f59e0b;
+            --accent-hover: #fbbf24;
+            --text-light: #f8fafc;
+            --text-readable: #94a3b8;
+            --gradient: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .glow-orb {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, rgba(11, 17, 32, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .orb-1 { top: -100px; left: -100px; }
+        .orb-2 { top: 40%; right: -150px; }
+
+        .navbar {
+            background: rgba(11, 17, 32, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--text-light) !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .navbar-brand i { color: var(--accent); }
+        .nav-link {
+            color: var(--text-readable) !important;
+            font-weight: 500;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        .nav-link:hover { color: var(--text-light) !important; }
+
+        .btn-accent {
+            background: var(--gradient);
+            color: #fff;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 10px 24px;
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-accent:hover {
+            background: var(--accent-hover);
+            color: var(--bg-dark);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        .btn-outline-custom {
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-light);
+            border-radius: 8px;
+            padding: 10px 24px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-outline-custom:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+            position: relative;
+        }
+        .badge-pill-custom {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+        .hero h1 .text-gradient {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-readable);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .stats-container {
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 40px 0;
+            margin-bottom: 80px;
+        }
+        .stat-item h3 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+        .stat-item p {
+            color: var(--text-readable);
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+        }
+        .section-subtitle {
+            color: var(--text-readable);
+            margin-bottom: 50px;
+            font-size: 1.1rem;
+        }
+
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 32px;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .icon-box {
+            width: 56px; height: 56px;
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: var(--accent);
+            margin-bottom: 24px;
+        }
+        .glass-card h4 { font-weight: 700; margin-bottom: 12px; font-size: 1.25rem; }
+        .glass-card p { color: var(--text-readable); font-size: 0.95rem; line-height: 1.6; margin: 0; }
+
+        .featured-project {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        .featured-project::before {
+            content: '';
+            position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--gradient);
+        }
+
+        .cta-section {
+            background: var(--gradient);
+            border-radius: 24px;
+            padding: 60px 40px;
+            text-align: center;
+            color: #fff;
+        }
+        .cta-section h2 { font-weight: 800; font-size: 2.5rem; margin-bottom: 20px; color: #fff; }
+        .cta-section .btn-light { color: var(--bg-dark); font-weight: 700; padding: 12px 32px; border-radius: 8px; font-size: 1.1rem; }
+
+        footer {
+            background: #050810;
+            padding: 60px 0 20px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 80px;
+        }
+        footer h5 { color: var(--text-light); font-weight: 700; margin-bottom: 20px; }
+        footer a {
+            color: var(--text-readable);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+            transition: color 0.2s;
+        }
+        footer a:hover { color: var(--accent); }
+        .social-icons a {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%; color: var(--text-light);
+            margin-right: 10px; transition: all 0.3s;
+        }
+        .social-icons a:hover { background: var(--accent); color: var(--bg-dark); }
+    </style>
+</head>
+<body>
+
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}"><i class="fas fa-code"></i> BetaCode</a>
+            <button class="navbar-toggler border-0 text-light" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#work">Our Work</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                    
+                    <!-- ✅ DYNAMIC AUTHENTICATION BUTTONS -->
+                    {% if user.is_authenticated %}
+                        <li class="nav-item ms-lg-4 mt-3 mt-lg-0">
+                            <a href="{% url 'developer_dashboard' %}" class="btn btn-outline-custom btn-sm w-100">
+                                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a href="{% url 'staff_logout' %}" class="btn btn-danger btn-sm w-100">
+                                <i class="fas fa-sign-out-alt me-1"></i> Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-lg-4 mt-3 mt-lg-0">
+                            <a href="http://127.0.0.1:8000" class="btn btn-accent btn-sm w-100">Client Login</a>
+                        </li>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a href="{% url 'staff_login' %}" class="btn btn-outline-custom btn-sm w-100">
+                                <i class="fas fa-lock me-1"></i> Dev Login
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="container" data-aos="fade-up" data-aos-duration="1000">
+            <div class="badge-pill-custom">
+                <i class="fas fa-star me-1"></i> Premier Software Consultancy in Ghana
+            </div>
+            <h1>
+                We Build Software <br>
+                That <span class="text-gradient">Scales.</span>
+            </h1>
+            <p>
+                From enterprise school management systems to bespoke web applications, 
+                BetaCode delivers secure, lightning-fast digital solutions tailored to your business needs.
+            </p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="#work" class="btn btn-accent btn-lg">View Our Work</a>
+                <a href="#contact" class="btn btn-outline-custom btn-lg">Get a Quote</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- STATS SECTION -->
+    <div class="container">
+        <div class="stats-container text-center" data-aos="fade-up" data-aos-delay="200">
+            <div class="row">
+                <div class="col-md-4 stat-item mb-4 mb-md-0">
+                    <h3>15+</h3><p>Projects Delivered</p>
+                </div>
+                <div class="col-md-4 stat-item mb-4 mb-md-0">
+                    <h3>100%</h3><p>Client Satisfaction</p>
+                </div>
+                <div class="col-md-4 stat-item">
+                    <h3>24/7</h3><p>Technical Support</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="py-5">
+        <div class="container">
+            <div class="text-center" data-aos="fade-up">
+                <h2 class="section-title">About BetaCode</h2>
+                <p class="section-subtitle">Your partner in digital transformation.</p>
+            </div>
+            <div class="row justify-content-center text-center" data-aos="fade-up" data-aos-delay="100">
+                <div class="col-lg-8">
+                    <p style="color: var(--text-readable); font-size: 1.1rem; line-height: 1.8;">
+                        We are a premier software development and IT consultancy firm based in Ghana. 
+                        Our mission is to bridge the gap between complex business challenges and elegant technological solutions. 
+                        From school management systems to enterprise resource planners, we craft custom software tailored to your exact needs.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SERVICES SECTION -->
+    <section id="services" class="py-5">
+        <div class="container">
+            <div class="text-center" data-aos="fade-up">
+                <h2 class="section-title">What We Do</h2>
+                <p class="section-subtitle">End-to-end software solutions built for performance.</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="glass-card">
+                        <div class="icon-box"><i class="fas fa-laptop-code"></i></div>
+                        <h4>Custom Web Apps</h4>
+                        <p>We build scalable web applications using Django, React, and modern architectures to solve your unique business challenges.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="glass-card">
+                        <div class="icon-box"><i class="fas fa-database"></i></div>
+                        <h4>Enterprise Systems</h4>
+                        <p>Complex ERPs, school portals, and financial systems designed to handle thousands of users securely.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="glass-card">
+                        <div class="icon-box"><i class="fas fa-user-shield"></i></div>
+                        <h4>IT Consultancy</h4>
+                        <p>Strategic advice on cloud infrastructure, cybersecurity, and digital transformation for your organization.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURED WORK SECTION -->
+    <section id="work" class="py-5 mt-5">
+        <div class="container">
+            <div class="featured-project" data-aos="zoom-in">
+                <div class="row align-items-center">
+                    <div class="col-lg-7">
+                        <span class="badge bg-warning text-dark mb-3">Featured Project</span>
+                        <h2 class="fw-bold mb-3">School Management System (SIMS)</h2>
+                        <p class="text-muted" style="color: var(--text-readable) !important; font-size: 1.1rem; line-height: 1.7;">
+                            A complete enterprise resource planning platform built for the Ghana School of Surveying and Mapping. 
+                            It features a dual-approval finance module, automated admissions, student portals, and real-time analytics.
+                        </p>
+                        <ul class="list-unstyled mt-4" style="color: var(--text-readable);">
+                            <li class="mb-2"><i class="fas fa-check-circle text-warning me-2"></i> Automated Fee Collection & Approvals</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-warning me-2"></i> Student & Lecturer Portals</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-warning me-2"></i> Paystack Integration</li>
+                        </ul>
+                    </div>
+                    <div class="col-lg-5 text-center d-none d-lg-block">
+                        <i class="fas fa-school" style="font-size: 10rem; color: rgba(255,255,255,0.05);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT SECTION -->
+    <section id="contact" class="py-5 mt-5">
+        <div class="container" data-aos="fade-up">
+            <div class="text-center mb-5">
+                <h2 class="section-title">Get in Touch</h2>
+                <p class="section-subtitle">Ready to start your project? Let's talk.</p>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="glass-card text-center p-5">
+                        <i class="fas fa-envelope text-warning mb-4" style="font-size: 3rem;"></i>
+                        <h3 class="fw-bold mb-3">Have a project in mind?</h3>
+                        <p class="text-readable mb-4" style="color: var(--text-readable); font-size: 1.1rem;">
+                            Whether you need a full enterprise system or a simple website, we are here to help. Reach out to us for a free consultation and quote.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a href="mailto:info@betacode.com" class="btn btn-accent btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i> Email Us
+                            </a>
+                            <a href="tel:+233551234567" class="btn btn-outline-custom btn-lg">
+                                <i class="fas fa-phone me-2"></i> Call Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="py-5 mt-5">
+        <div class="container" data-aos="fade-up">
+            <div class="cta-section">
+                <h2>Ready to digitize your organization?</h2>
+                <p class="mb-4" style="font-size: 1.2rem; opacity: 0.9;">Let's discuss your project. No obligation, just expert advice.</p>
+                <a href="#contact" class="btn btn-light">
+                    <i class="fas fa-comments me-2"></i> Start a Conversation
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="text-white fw-bold mb-3"><i class="fas fa-code text-warning me-2"></i>BetaCode</h5>
+                    <p style="color: var(--text-readable); line-height: 1.6;">
+                        Building secure, scalable, and beautiful software solutions for forward-thinking organizations.
+                    </p>
+                    <div class="social-icons mt-4">
+                        <a href="https://twitter.com" target="_blank" title="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="https://linkedin.com" target="_blank" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://github.com" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h5>Company</h5>
+                    <a href="#about">About Us</a>
+                    <a href="#services">Services</a>
+                    <a href="#work">Our Work</a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h5>Solutions</h5>
+                    <a href="#work">School Management</a>
+                    <a href="#services">Custom Web Apps</a>
+                    <a href="#services">IT Consultancy</a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h5>Contact Us</h5>
+                    <a href="mailto:info@betacode.com"><i class="fas fa-envelope me-2"></i>info@betacode.com</a>
+                    <a href="tel:+233551234567"><i class="fas fa-phone me-2"></i>+233 (55) 123-4567</a>
+                    <a href="https://maps.google.com/?q=Accra,Ghana" target="_blank"><i class="fas fa-map-marker-alt me-2"></i>Accra, Ghana</a>
+                </div>
+            </div>
+            <hr class="mt-5 mb-4" style="border-color: rgba(255,255,255,0.1);">
+            <div class="text-center" style="color: var(--text-readable); font-size: 0.9rem;">
+                &copy; 2026 BetaCode Software Solutions and Consultancy. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({ once: true, offset: 100 });
+    </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Reports | BetaCode Developer Console</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0b1120;
+            --bg-card: #1e293b;
+            --accent: #f59e0b;
+            --text-light: #f8fafc;
+            --text-readable: #94a3b8;
+            --gradient: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(11, 17, 32, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .navbar-brand {
+            font-weight: 800;
+            color: var(--text-light) !important;
+        }
+        .navbar-brand i { color: var(--accent); }
+
+        /* Cards */
+        .card-bug {
+            background: var(--bg-card);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+        .card-bug:hover {
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .card-header-custom {
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 15px 20px;
+            border-radius: 16px 16px 0 0 !important;
+        }
+        .card-body-custom {
+            padding: 20px;
+        }
+        .bg-light-dark {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+        }
+        
+        /* Buttons & Badges */
+        .btn-accent {
+            background: var(--gradient);
+            color: white;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-accent:hover {
+            background: #fbbf24;
+            color: var(--bg-dark);
+        }
+        .badge-open { background: #ef4444; color: white; }
+        .badge-resolved { background: #10b981; color: white; }
+        
+        .text-muted-custom { color: var(--text-readable) !important; }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg mb-4 py-3">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-code me-2"></i> BetaCode Developer Console
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'home' %}" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                    <i class="fas fa-globe me-1"></i> View Website
+                </a>
+                <a href="{% url 'staff_logout' %}" class="btn btn-danger btn-sm rounded-pill px-3">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="container pb-5">
+        
+        <!-- Stats Row -->
+        <div class="row g-4 mb-4">
+            <!-- Total Bugs Card -->
+            <div class="col-md-6">
+                <div class="card-bug p-3 d-flex flex-row align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; background: rgba(239, 68, 68, 0.2); color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle fa-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0 fw-bold">{{ bug_count }}</h3>
+                        <p class="text-muted-custom mb-0">Total Reports Fetched</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API Connection Card -->
+            <div class="col-md-6">
+                <div class="card-bug p-3 d-flex flex-row align-items-center">
+                    {% if api_connected %}
+                        <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.2); color: #10b981;">
+                            <i class="fas fa-server fa-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0 fw-bold text-success">Connected</h3>
+                            <p class="text-muted-custom mb-0">SIMS API Online</p>
+                        </div>
+                    {% else %}
+                        <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; background: rgba(239, 68, 68, 0.2); color: #ef4444;">
+                            <i class="fas fa-plug fa-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0 fw-bold text-danger">Disconnected</h3>
+                            <p class="text-muted-custom mb-0">SIMS API Offline</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Messages (e.g., Failed to load) -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show bg-dark text-white border-0 shadow-sm" role="alert">
+                    <i class="fas fa-info-circle me-2"></i> {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Bug List Grid -->
+        <div class="row g-4">
+            {% for bug in bugs %}
+            <div class="col-md-6">
+                <div class="card-bug h-100">
+                    
+                    <!-- Card Header -->
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold text-truncate" style="max-width: 70%;" title="{{ bug.title }}">{{ bug.title }}</h5>
+                        {% if bug.status == 'open' %}
+                            <span class="badge badge-open rounded-pill px-3 py-2">OPEN</span>
+                        {% else %}
+                            <span class="badge badge-resolved rounded-pill px-3 py-2">RESOLVED</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div class="card-body-custom">
+                        <p class="text-muted-custom small mb-3">
+                            <i class="fas fa-user me-1"></i> {{ bug.reporter }} 
+                            <span class="mx-2">|</span> 
+                            <i class="fas fa-clock me-1"></i> {{ bug.created_at }}
+                        </p>
+                        
+                        <!-- Description -->
+                        <div class="bg-light-dark mb-3">
+                            <p class="mb-0 text-white" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">{{ bug.description }}</p>
+                        </div>
+                        
+                        <!-- Media attachments (Screenshot & Audio) -->
+                        <div class="row g-2 mb-3">
+                            {% if bug.screenshot %}
+                            <div class="col-6">
+                                <a href="{{ bug.screenshot }}" target="_blank" title="View full screenshot">
+                                    <img src="{{ bug.screenshot }}" class="img-fluid rounded border border-secondary" style="height: 80px; width: 100%; object-fit: cover;">
+                                </a>
+                            </div>
+                            {% endif %}
+                            
+                            {% if bug.voice_note %}
+                            <div class="col-6 d-flex align-items-center">
+                                <audio controls class="w-100" style="height: 35px;">
+                                    <source src="{{ bug.voice_note }}" type="audio/webm">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Footer Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);">
+                            <span class="text-muted-custom small text-truncate" style="max-width: 60%;" title="{{ bug.page_url }}">
+                                <i class="fas fa-link me-1"></i> {{ bug.page_url|default:"No URL provided" }}
+                            </span>
+                            
+                            {% if bug.status == 'open' %}
+                            <a href="{% url 'resolve_bug_remote' bug.id %}" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                                <i class="fas fa-check me-1"></i> Mark Resolved
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            {% empty %}
+            <!-- Empty State -->
+            <div class="col-12 text-center py-5">
+                <div class="bg-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="fas fa-mug-hot fa-2x text-muted"></i>
+                </div>
+                <h4 class="text-muted-custom">No bug reports found. Time for a coffee! ☕</h4>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

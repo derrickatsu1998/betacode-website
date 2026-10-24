@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login | BetaCode</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0b1120;
+            --bg-card: #1e293b;
+            --accent: #f59e0b;
+            --text-light: #f8fafc;
+            --text-readable: #94a3b8;
+            --gradient: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+        }
+
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-light); 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Decorative Background Glow */
+        .glow-orb {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, rgba(11, 17, 32, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .orb-1 { top: -100px; left: -100px; }
+        .orb-2 { bottom: -100px; right: -100px; }
+
+        .login-card { 
+            background: rgba(30, 41, 59, 0.8); 
+            backdrop-filter: blur(12px);
+            padding: 40px; 
+            border-radius: 20px; 
+            width: 100%; 
+            max-width: 420px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+            border: 1px solid rgba(255,255,255,0.08); 
+            position: relative;
+        }
+
+        .login-header h3 {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .login-header p {
+            color: var(--text-readable);
+            font-size: 0.9rem;
+        }
+
+        .form-label { 
+            color: var(--text-readable); 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Custom Input Styling */
+        .input-group-text {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-right: none;
+            color: var(--text-readable);
+            border-radius: 10px 0 0 10px;
+        }
+        .form-control { 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            border-left: none;
+            color: white; 
+            padding: 12px 15px;
+            border-radius: 0 10px 10px 0;
+            transition: all 0.3s;
+        }
+        .form-control:focus { 
+            background: rgba(15, 23, 42, 0.8); 
+            color: white; 
+            border-color: var(--accent); 
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15); 
+        }
+        .form-control:focus + .input-group-text,
+        .input-group:focus-within .input-group-text {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Password Toggle Button */
+        .btn-toggle-password {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-left: none;
+            color: var(--text-readable);
+            border-radius: 0 10px 10px 0;
+            padding: 0 15px;
+            transition: all 0.2s;
+        }
+        .btn-toggle-password:hover {
+            color: var(--accent);
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .input-group:focus-within .btn-toggle-password {
+            border-color: var(--accent);
+        }
+
+        /* Login Button */
+        .btn-accent { 
+            background: var(--gradient); 
+            color: white; 
+            font-weight: 700; 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 10px; 
+            border: none; 
+            margin-top: 10px;
+            transition: all 0.3s;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+        .btn-accent:hover { 
+            background: #fbbf24; 
+            color: #0f172a; 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .back-link {
+            color: var(--text-readable);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Glow Effects -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="login-card">
+        <div class="login-header text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-dark rounded-circle mb-3" style="width: 60px; height: 60px; border: 1px solid rgba(255,255,255,0.1);">
+                <i class="fas fa-code text-warning fa-lg"></i>
+            </div>
+            <h3 class="fw-bold">BetaCode Console</h3>
+            <p>Enter your credentials to access the developer portal.</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger p-2 text-center border-0" style="font-size: 0.9rem; background: rgba(220, 53, 69, 0.2); color: #ff8a95;">
+                    <i class="fas fa-exclamation-circle me-1"></i> {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Username -->
+            <div class="mb-4">
+                <label class="form-label">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    <input type="text" name="username" class="form-control" placeholder="Enter username" required autofocus>
+                </div>
+            </div>
+
+            <!-- Password with Toggle -->
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Enter password" required>
+                    <button class="btn btn-toggle-password" type="button" id="togglePasswordBtn" title="Show/Hide Password">
+                        <i class="far fa-eye" id="toggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-accent">
+                <i class="fas fa-sign-in-alt me-2"></i> Secure Login
+            </button>
+        </form>
+        
+        <div class="text-center mt-4">
+            <a href="{% url 'home' %}" class="back-link">
+                <i class="fas fa-arrow-left me-1"></i> Back to Website
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ✅ Show/Hide Password Logic
+        const toggleBtn = document.getElementById('togglePasswordBtn');
+        const passwordInput = document.getElementById('passwordInput');
+        const toggleIcon = document.getElementById('toggleIcon');
+
+        toggleBtn.addEventListener('click', function (e) {
+            // Toggle the type attribute
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle the eye icon
+            if (type === 'text') {
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+                toggleBtn.style.color = 'var(--accent)'; // Highlight button when visible
+            } else {
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+                toggleBtn.style.color = 'var(--text-readable)'; // Revert color
+            }
+        });
+    </script>
+</body>
+</html>

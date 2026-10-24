@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <!-- Developer Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-dark text-white p-4 rounded shadow-sm">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-code text-warning me-2"></i> BetaCode Developer Console</h2>
+            <p class="text-muted mb-0 mt-1">Manage incoming bug reports from GSSM</p>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="text-center bg-danger text-white px-4 py-2 rounded">
+                <h3 class="mb-0 fw-bold">{{ total_open }}</h3>
+                <small>Open Bugs</small>
+            </div>
+            <div class="text-center bg-success text-white px-4 py-2 rounded">
+                <h3 class="mb-0 fw-bold">{{ total_resolved }}</h3>
+                <small>Resolved</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        {% for bug in bugs %}
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100" style="border-left: 5px solid {% if bug.status == 'open' %}#dc3545{% else %}#198754{% endif %};">
+                <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between align-items-center">
+                    <span class="badge {% if bug.status == 'open' %}bg-danger{% else %}bg-success{% endif %} rounded-pill px-3 py-2">
+                        {{ bug.get_status_display }}
+                    </span>
+                    <small class="text-muted font-monospace">#{{ bug.id }}</small>
+                </div>
+                <div class="card-body">
+                    <h5 class="fw-bold text-dark mb-1">{{ bug.title }}</h5>
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-user me-1"></i> {{ bug.reporter.get_full_name|default:bug.reporter.username }} 
+                        | <i class="fas fa-clock me-1"></i> {{ bug.created_at|naturaltime }}
+                    </p>
+                    
+                    <div class="p-3 bg-light rounded mb-3">
+                        <p class="mb-0 text-secondary" style="white-space: pre-wrap;">{{ bug.description }}</p>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        {% if bug.screenshot %}
+                        <div class="col-6">
+                            <a href="{{ bug.screenshot.url }}" target="_blank">
+                                <img src="{{ bug.screenshot.url }}" class="img-fluid rounded border" style="max-height: 100px; width: 100%; object-fit: cover;">
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        {% if bug.voice_note %}
+                        <div class="col-6 d-flex align-items-center">
+                            <audio controls class="w-100" style="height: 40px;">
+                                <source src="{{ bug.voice_note.url }}" type="audio/mpeg">
+                            </audio>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <span class="small text-muted"><i class="fas fa-link me-1"></i> {{ bug.page_url|default:"No URL provided" }}</span>
+                        
+                        {% if bug.status == 'open' %}
+                        <a href="{% url 'company:resolve_bug' bug.pk %}" class="btn btn-sm btn-dark fw-bold">
+                            <i class="fas fa-check-double me-1"></i> Mark Resolved
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-coffee fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">No bug reports yet. Time for a coffee! ☕</h4>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
