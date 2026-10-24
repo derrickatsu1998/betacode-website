@@ -3,7 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.http import HttpResponseForbidden
+from django.conf import settings # ✅ Import settings
 import requests
+
+# ✅ Remove the hardcoded variables and load them from settings
+SIMS_API_SECRET = settings.SIMS_API_SECRET
+SIMS_BASE_URL = settings.SIMS_BASE_URL
+
+# ... (the rest of your views stay exactly the same)
 
 SIMS_API_SECRET = "BetaCode_Super_Secret_Key_2026"
 
