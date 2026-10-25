@@ -18,7 +18,7 @@ SIMS_API_SECRET = os.environ.get('SIMS_API_SECRET', 'BetaCode_Super_Secret_Key_2
 SIMS_BASE_URL = os.environ.get('SIMS_BASE_URL', 'http://127.0.0.1:8000')
 
 # ========== SECURITY ==========
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com', '.ngrok-free.app' ]
 
 # ========== APPLICATION DEFINITION ==========
 INSTALLED_APPS = [
