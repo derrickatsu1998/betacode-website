@@ -53,8 +53,10 @@
                         
                         {% if bug.voice_note %}
                         <div class="col-6 d-flex align-items-center">
+                            <!-- ✅ Removed type="audio/mpeg" so it can play webm/mp4 -->
                             <audio controls class="w-100" style="height: 40px;">
-                                <source src="{{ bug.voice_note.url }}" type="audio/mpeg">
+                                <source src="{{ bug.voice_note.url }}">
+                                Your browser does not support the audio element.
                             </audio>
                         </div>
                         {% endif %}
@@ -64,7 +66,8 @@
                         <span class="small text-muted"><i class="fas fa-link me-1"></i> {{ bug.page_url|default:"No URL provided" }}</span>
                         
                         {% if bug.status == 'open' %}
-                        <a href="{% url 'company:resolve_bug' bug.pk %}" class="btn btn-sm btn-dark fw-bold">
+                        <!-- ✅ FIXED: Changed 'company:resolve_bug' to 'bugs:resolve_bug' -->
+                        <a href="{% url 'bugs:resolve_bug' bug.pk %}" class="btn btn-sm btn-dark fw-bold">
                             <i class="fas fa-check-double me-1"></i> Mark Resolved
                         </a>
                         {% endif %}
