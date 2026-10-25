@@ -2,20 +2,23 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.http import HttpResponseForbidden
-from django.conf import settings # ✅ Import settings
+from django.http import HttpResponseForbidden, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings 
 import requests
+import json
 
-# ✅ Remove the hardcoded variables and load them from settings
-SIMS_API_SECRET = settings.SIMS_API_SECRET
-SIMS_BASE_URL = settings.SIMS_BASE_URL
+# Import your new model for receiving bugs
+from .models import ReceivedBugReport
 
-# ... (the rest of your views stay exactly the same)
-
+# ✅ Configurations
 SIMS_API_SECRET = "BetaCode_Super_Secret_Key_2026"
-
-# ✅ Change this to 127.0.0.1:8000 while testing locally
+# ✅ Change this to 127.0.0.1:8000 while testing locally, and your Render URL when live
 SIMS_BASE_URL = "http://127.0.0.1:8000" 
+
+# ==========================================
+# 1. YOUR ORIGINAL BETACODE WEBSITE VIEWS
+# ==========================================
 
 def home(request):
     return render(request, 'core/home.html')
@@ -47,7 +50,7 @@ def developer_dashboard(request):
         return HttpResponseForbidden("Access Denied. You are not a staff member.")
 
     bugs = []
-    api_connected = False  # ✅ Track if the API call was successful
+    api_connected = False  
     error_msg = ""
 
     try:
@@ -69,7 +72,7 @@ def developer_dashboard(request):
 
     return render(request, 'core/bugs.html', {
         'bugs': bugs,
-        'api_connected': api_connected, # ✅ Pass to template
+        'api_connected': api_connected, 
         'bug_count': len(bugs)
     })
 
@@ -93,3 +96,36 @@ def resolve_bug_remote(request, bug_id):
         messages.error(request, f"Connection error: {e}")
         
     return redirect('developer_dashboard')
+
+
+# ==========================================
+# 2. NEW API ENDPOINT TO RECEIVE BUGS FROM SIMS
+# ==========================================
+
+@csrf_exempt
+def receive_bug_from_sims(request):
+    if request.method == 'POST':
+        # 1. Verify the request is actually from your SIMS app
+        if request.headers.get('X-BetaCode-Secret') != SIMS_API_SECRET:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        
+        try:
+            # 2. Read the JSON data sent by SIMS
+            data = json.loads(request.body)
+            
+            # 3. Save it to the BetaCode database
+            bug = ReceivedBugReport.objects.create(
+                title=data.get('title'),
+                description=data.get('description'),
+                page_url=data.get('page_url'),
+                reporter_name=data.get('reporter'),
+                screenshot_url=data.get('screenshot'),
+                voice_note_url=data.get('voice_note'),
+            )
+            
+            return JsonResponse({'success': True, 'bug_id': bug.id}, status=201)
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+    return JsonResponse({'error': 'Only POST method allowed'}, status=405)
