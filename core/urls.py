@@ -5,8 +5,13 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('login/', views.staff_login, name='staff_login'),
     path('logout/', views.staff_logout, name='staff_logout'),
-    # ✅ The dashboard is now accessed at /developer/bugs/
     path('developer/bugs/', views.developer_dashboard, name='developer_dashboard'),
-    path('developer/resolve/<int:bug_id>/', views.resolve_bug_remote, name='resolve_bug_remote'),
+    
+    # ✅ NEW TICKETING URLS
+    path('bug/update/<int:bug_id>/', views.update_bug, name='update_bug'),
+    path('bug/delete/<int:bug_id>/', views.delete_bug, name='delete_bug'),
+    path('bug/notify/<int:bug_id>/', views.notify_user_resolved, name='notify_user_resolved'),
+    
+    # API Endpoint
     path('api/receive-bug/', views.receive_bug_from_sims, name='receive_bug'),
 ]
