@@ -13,5 +13,5 @@ urlpatterns = [
     path('bug/notify/<int:bug_id>/', views.notify_user_resolved, name='notify_user_resolved'),
     
     # SIMS API Endpoint
-    path('api/receive-bug/', views.receive_bug_from_sim, name='receive_bug'),
+    path('api/receive-bug/', views.receive_bug_from_sims, name='receive_bug'),
 ]
