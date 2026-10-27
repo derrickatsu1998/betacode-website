@@ -24,6 +24,11 @@
             border-color: #f59e0b !important;
             box-shadow: 0 0 0 0.25rem rgba(245, 158, 11, 0.25) !important;
         }
+        
+        /* Status Indicator */
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-online { background-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+        .status-offline { background-color: #ef4444; }
     </style>
 </head>
 <body>
@@ -65,19 +70,41 @@
         <div class="row g-4">
             {% for dev in developers %}
             <div class="col-md-4">
-                <div class="card-dev p-4 h-100">
+                <!-- Added d-flex flex-column so buttons align at the bottom -->
+                <div class="card-dev p-4 h-100 d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h5 class="fw-bold text-accent mb-0">{{ dev.user.get_full_name|default:dev.user.username }}</h5>
                         <span class="badge bg-secondary">{{ dev.get_role_display }}</span>
                     </div>
+                    
                     <p class="text-muted small mb-2"><i class="fas fa-envelope me-2"></i>{{ dev.user.email }}</p>
                     <p class="text-muted small mb-3">
-                        <i class="fas fa-circle {% if dev.is_available %}text-success{% else %}text-danger{% endif %} me-2"></i>
+                        <span class="status-dot {% if dev.is_available %}status-online{% else %}status-offline{% endif %}"></span>
                         {% if dev.is_available %}Available{% else %}Busy / Offline{% endif %}
                     </p>
-                    <a href="{% url 'toggle_developer_status' dev.user.id %}" class="btn btn-sm btn-outline-warning w-100 rounded-pill">
-                        <i class="fas fa-sync-alt me-1"></i> Toggle Status
-                    </a>
+                    
+                    <!-- Push buttons to the bottom -->
+                    <div class="mt-auto pt-3 border-top border-secondary">
+                        <div class="d-flex gap-2">
+                            <!-- Toggle Status Button -->
+                            <a href="{% url 'toggle_developer_status' dev.user.id %}" class="btn btn-sm btn-outline-warning flex-grow-1" title="Toggle Availability">
+                                <i class="fas fa-sync-alt me-1"></i> Toggle
+                            </a>
+                            
+                            <!-- Admin Edit Link (Optional but useful for password resets) -->
+                            <a href="/admin/auth/user/{{ dev.user.id }}/change/" target="_blank" class="btn btn-sm btn-outline-info" title="Edit in Django Admin">
+                                <i class="fas fa-edit"></i>
+                            </a>
+
+                            <!-- Delete Button with Confirmation -->
+                            <form method="POST" action="{% url 'delete_developer' dev.user.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete {{ dev.user.username }}? This action cannot be undone.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Developer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% empty %}
@@ -101,7 +128,6 @@
                     {% csrf_token %}
                     <div class="modal-body p-4">
                         
-                        <!-- First Name & Last Name Row -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-light small fw-bold">First Name</label>
@@ -113,33 +139,28 @@
                             </div>
                         </div>
 
-                        <!-- Username -->
                         <div class="mb-3">
                             <label class="form-label text-light small fw-bold">Username</label>
                             {{ form.username }}
                             <small class="text-muted" style="font-size: 0.75rem;">This will be their login ID.</small>
                         </div>
 
-                        <!-- Email -->
                         <div class="mb-3">
                             <label class="form-label text-light small fw-bold">Email Address</label>
                             {{ form.email }}
                         </div>
 
-                        <!-- Password -->
                         <div class="mb-3">
                             <label class="form-label text-light small fw-bold">Password</label>
                             {{ form.password }}
                             <small class="text-muted d-block" style="font-size: 0.75rem;">Must be at least 8 characters and not entirely numeric.</small>
                         </div>
 
-                        <!-- Role -->
                         <div class="mb-3">
                             <label class="form-label text-light small fw-bold">Assign Role</label>
                             {{ form.role }}
                         </div>
 
-                        <!-- Errors (if any) -->
                         {% if form.errors %}
                             <div class="alert alert-danger bg-danger text-white border-0 py-2 small mt-3">
                                 <ul class="mb-0 ps-3">
@@ -164,7 +185,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- ✅ Script to keep the modal open and show errors -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             {% if form.errors %}
