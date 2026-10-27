@@ -161,3 +161,39 @@ def receive_bug_from_sims(request):
             return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Only POST method allowed'}, status=405)
+
+
+
+from .forms import DeveloperCreationForm
+from .models import DeveloperProfile
+
+@login_required(login_url='/login/')
+def manage_developers(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied.")
+    
+    developers = DeveloperProfile.objects.select_related('user').all()
+    
+    if request.method == 'POST':
+        form = DeveloperCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "New developer added successfully.")
+            return redirect('manage_developers')
+    else:
+        form = DeveloperCreationForm()
+
+    return render(request, 'core/manage_developers.html', {
+        'developers': developers,
+        'form': form,
+    })
+
+@login_required(login_url='/login/')
+def toggle_developer_status(request, user_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied.")
+    
+    profile = get_object_or_404(DeveloperProfile, user_id=user_id)
+    profile.is_available = not profile.is_available
+    profile.save()
+    return redirect('manage_developers')

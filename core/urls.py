@@ -14,4 +14,7 @@ urlpatterns = [
     
     # SIMS API Endpoint
     path('api/receive-bug/', views.receive_bug_from_sims, name='receive_bug'),
+
+    path('developer/manage/', views.manage_developers, name='manage_developers'),
+    path('developer/toggle-status/<int:user_id>/', views.toggle_developer_status, name='toggle_developer_status'),
 ]
