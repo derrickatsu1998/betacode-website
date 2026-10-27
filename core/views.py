@@ -1,6 +1,6 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.http import HttpResponseForbidden, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -8,14 +8,14 @@ from django.conf import settings
 import requests
 import json
 
-# Import your new model for receiving bugs
+# Import your model for receiving bugs
 from .models import ReceivedBugReport
 
 # ✅ Configurations
 SIMS_API_SECRET = "BetaCode_Super_Secret_Key_2026"
-
-# ✅ FIXED: Pointing to the live SIMS Render URL
 SIMS_BASE_URL = "https://sims-ax72.onrender.com" 
+
+User = get_user_model()
 
 # ==========================================
 # 1. YOUR ORIGINAL BETACODE WEBSITE VIEWS
@@ -56,7 +56,7 @@ def developer_dashboard(request):
 
     try:
         headers = {'X-BetaCode-Secret': SIMS_API_SECRET}
-        response = requests.get(f"{SIMS_BASE_URL}/bugs/api/reports/", headers=headers, timeout=15)
+        response = requests.get(f"{SIMS_BASE_URL}/bugs/api/reports/", headers=headers, timeout=20)
         
         if response.status_code == 200:
             bugs = response.json().get('bugs', [])
@@ -71,51 +71,99 @@ def developer_dashboard(request):
     if error_msg:
         messages.error(request, error_msg)
 
+    # ✅ Fetch all developers to populate the "Assign To" dropdown
+    developers = User.objects.filter(is_staff=True)
+
     return render(request, 'core/bugs.html', {
         'bugs': bugs,
         'api_connected': api_connected, 
-        'bug_count': len(bugs)
+        'bug_count': len(bugs),
+        'developers': developers, # Added this so the template works
     })
 
+# ==========================================
+# 2. NEW VIEWS FOR MANAGING BUGS (TICKETING)
+# ==========================================
+
 @login_required(login_url='/login/')
-def resolve_bug_remote(request, bug_id):
+def update_bug(request, bug_id):
     if not request.user.is_staff:
         return HttpResponseForbidden("Access Denied.")
-
-    try:
-        headers = {'X-BetaCode-Secret': SIMS_API_SECRET}
-        response = requests.post(
-            f"{SIMS_BASE_URL}/bugs/api/reports/", 
-            headers=headers, 
-            json={'bug_id': bug_id},
-            timeout=15
-        )
-        if response.status_code == 200:
-            messages.success(request, "Bug marked as resolved in SIMS.")
-        else:
-            messages.error(request, "Failed to update bug status.")
-    except Exception as e:
-        messages.error(request, f"Connection error: {e}")
+    
+    if request.method == 'POST':
+        bug = get_object_or_404(ReceivedBugReport, id=bug_id)
         
+        # Update fields
+        bug.status = request.POST.get('status', bug.status)
+        bug.developer_notes = request.POST.get('developer_notes', bug.developer_notes)
+        
+        assigned_to_id = request.POST.get('assigned_to')
+        if assigned_to_id:
+            bug.assigned_to_id = assigned_to_id
+        else:
+            bug.assigned_to = None
+
+        bug.save()
+        messages.success(request, f"Bug #{bug.id} updated successfully.")
+    
     return redirect('developer_dashboard')
 
+@login_required(login_url='/login/')
+def delete_bug(request, bug_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied.")
+    
+    if request.method == 'POST':
+        bug = get_object_or_404(ReceivedBugReport, id=bug_id)
+        bug.delete()
+        messages.success(request, "Bug report deleted.")
+    
+    return redirect('developer_dashboard')
+
+@login_required(login_url='/login/')
+def notify_user_resolved(request, bug_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied.")
+    
+    if request.method == 'POST':
+        bug = get_object_or_404(ReceivedBugReport, id=bug_id)
+        
+        # Tell the SIMS API to send the email to the reporter
+        try:
+            headers = {'X-BetaCode-Secret': SIMS_API_SECRET}
+            payload = {'bug_id': bug.id, 'reporter': bug.reporter_name}
+            
+            response = requests.post(
+                f"{SIMS_BASE_URL}/bugs/api/notify-resolved/", 
+                json=payload, 
+                headers=headers, 
+                timeout=20
+            )
+            
+            if response.status_code == 200:
+                bug.is_user_notified = True
+                bug.save()
+                messages.success(request, "Notification sent to user via SIMS.")
+            else:
+                messages.error(request, f"SIMS failed to send notification. Status: {response.status_code}")
+        except Exception as e:
+            messages.error(request, f"Connection error: {e}")
+            
+    return redirect('developer_dashboard')
 
 # ==========================================
-# 2. NEW API ENDPOINT TO RECEIVE BUGS FROM SIMS
+# 3. EXTERNAL API ENDPOINTS
 # ==========================================
 
 @csrf_exempt
 def receive_bug_from_sims(request):
     if request.method == 'POST':
-        # 1. Verify the request is actually from your SIMS app
         if request.headers.get('X-BetaCode-Secret') != SIMS_API_SECRET:
             return JsonResponse({'error': 'Unauthorized'}, status=401)
         
         try:
-            # 2. Read the JSON data sent by SIMS
             data = json.loads(request.body)
             
-            # 3. Save it to the BetaCode database
             bug = ReceivedBugReport.objects.create(
                 title=data.get('title'),
                 description=data.get('description'),
