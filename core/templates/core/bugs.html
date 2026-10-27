@@ -62,6 +62,23 @@
             border-left: 3px solid var(--accent);
         }
         
+        /* Form Controls */
+        .form-control-custom, .form-select-custom {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-light);
+        }
+        .form-control-custom:focus, .form-select-custom:focus {
+            background-color: rgba(0,0,0,0.3);
+            color: var(--text-light);
+            border-color: var(--accent);
+            box-shadow: none;
+        }
+        .form-select-custom option {
+            background-color: var(--bg-card);
+            color: var(--text-light);
+        }
+
         /* Buttons & Badges */
         .btn-accent {
             background: var(--gradient);
@@ -75,9 +92,16 @@
             color: var(--bg-dark);
         }
         .badge-open { background: #ef4444; color: white; }
+        .badge-progress { background: #f59e0b; color: #0b1120; }
         .badge-resolved { background: #10b981; color: white; }
+        .badge-closed { background: #64748b; color: white; }
         
         .text-muted-custom { color: var(--text-readable) !important; }
+        
+        /* Audio Player Dark Theme */
+        audio::-webkit-media-controls-panel {
+            background-color: #334155;
+        }
     </style>
 </head>
 <body>
@@ -141,11 +165,11 @@
             </div>
         </div>
 
-        <!-- Error Messages (e.g., Failed to load) -->
+        <!-- Messages (Success/Error) -->
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show bg-dark text-white border-0 shadow-sm" role="alert">
-                    <i class="fas fa-info-circle me-2"></i> {{ message }}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show bg-dark text-white border-0 shadow-sm" role="alert" style="border-left: 4px solid {% if message.tags == 'error' %}#ef4444{% else %}#10b981{% endif %} !important;">
+                    <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i> {{ message }}
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
@@ -155,24 +179,28 @@
         <div class="row g-4">
             {% for bug in bugs %}
             <div class="col-md-6">
-                <div class="card-bug h-100">
+                <div class="card-bug h-100 d-flex flex-column">
                     
                     <!-- Card Header -->
                     <div class="card-header-custom d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 fw-bold text-truncate" style="max-width: 70%;" title="{{ bug.title }}">{{ bug.title }}</h5>
-                        {% if bug.status == 'open' %}
+                        <h5 class="mb-0 fw-bold text-truncate" style="max-width: 70%;" title="{{ bug.title }}">#{{ bug.id }} {{ bug.title }}</h5>
+                        {% if bug.status == 'Open' %}
                             <span class="badge badge-open rounded-pill px-3 py-2">OPEN</span>
-                        {% else %}
+                        {% elif bug.status == 'In Progress' %}
+                            <span class="badge badge-progress rounded-pill px-3 py-2">IN PROGRESS</span>
+                        {% elif bug.status == 'Resolved' %}
                             <span class="badge badge-resolved rounded-pill px-3 py-2">RESOLVED</span>
+                        {% else %}
+                            <span class="badge badge-closed rounded-pill px-3 py-2">CLOSED</span>
                         {% endif %}
                     </div>
                     
                     <!-- Card Body -->
-                    <div class="card-body-custom">
+                    <div class="card-body-custom flex-grow-1 d-flex flex-column">
                         <p class="text-muted-custom small mb-3">
-                            <i class="fas fa-user me-1"></i> {{ bug.reporter }} 
+                            <i class="fas fa-user me-1"></i> {{ bug.reporter_name }} 
                             <span class="mx-2">|</span> 
-                            <i class="fas fa-clock me-1"></i> {{ bug.created_at }}
+                            <i class="fas fa-clock me-1"></i> {{ bug.created_at|date:"M d, Y H:i" }}
                         </p>
                         
                         <!-- Description -->
@@ -182,38 +210,91 @@
                         
                         <!-- Media attachments (Screenshot & Audio) -->
                         <div class="row g-2 mb-3">
-                            {% if bug.screenshot %}
+                            {% if bug.screenshot_url %}
                             <div class="col-6">
-                                <a href="{{ bug.screenshot }}" target="_blank" title="View full screenshot">
-                                    <img src="{{ bug.screenshot }}" class="img-fluid rounded border border-secondary" style="height: 80px; width: 100%; object-fit: cover;">
+                                <a href="{{ bug.screenshot_url }}" target="_blank" title="View full screenshot">
+                                    <img src="{{ bug.screenshot_url }}" class="img-fluid rounded border border-secondary" style="height: 80px; width: 100%; object-fit: cover;">
                                 </a>
                             </div>
                             {% endif %}
                             
-                            {% if bug.voice_note %}
+                            {% if bug.voice_note_url %}
                             <div class="col-6 d-flex align-items-center">
                                 <audio controls class="w-100" style="height: 35px;">
-                                    <source src="{{ bug.voice_note }}" type="audio/webm">
+                                    <source src="{{ bug.voice_note_url }}" type="audio/webm">
                                     Your browser does not support the audio element.
                                 </audio>
                             </div>
                             {% endif %}
                         </div>
 
-                        <!-- Footer Actions -->
-                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);">
-                            <span class="text-muted-custom small text-truncate" style="max-width: 60%;" title="{{ bug.page_url }}">
-                                <i class="fas fa-link me-1"></i> {{ bug.page_url|default:"No URL provided" }}
-                            </span>
-                            
-                            {% if bug.status == 'open' %}
-                            <a href="{% url 'resolve_bug_remote' bug.id %}" class="btn btn-outline-success btn-sm rounded-pill px-3">
-                                <i class="fas fa-check me-1"></i> Mark Resolved
-                            </a>
-                            {% endif %}
+                        <!-- UPDATE FORM -->
+                        <div class="mt-auto">
+                            <form method="POST" action="{% url 'update_bug' bug.id %}">
+                                {% csrf_token %}
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted-custom small mb-1">Status</label>
+                                        <select name="status" class="form-select form-select-sm form-select-custom">
+                                            <option value="Open" {% if bug.status == 'Open' %}selected{% endif %}>Open</option>
+                                            <option value="In Progress" {% if bug.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                            <option value="Resolved" {% if bug.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                            <option value="Closed" {% if bug.status == 'Closed' %}selected{% endif %}>Closed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted-custom small mb-1">Assign To</label>
+                                        <select name="assigned_to" class="form-select form-select-sm form-select-custom">
+                                            <option value="">-- Unassigned --</option>
+                                            {% for dev in developers %}
+                                                <option value="{{ dev.id }}" {% if bug.assigned_to.id == dev.id %}selected{% endif %}>{{ dev.username }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <label class="form-label text-muted-custom small mb-1">Developer Notes (Internal)</label>
+                                    <textarea name="developer_notes" class="form-control form-control-sm form-control-custom" rows="2" placeholder="Add notes here...">{{ bug.developer_notes|default:'' }}</textarea>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);">
+                                    <span class="text-muted-custom small text-truncate" style="max-width: 40%;" title="{{ bug.page_url }}">
+                                        <i class="fas fa-link me-1"></i> {{ bug.page_url|default:"No URL" }}
+                                    </span>
+                                    <button type="submit" class="btn btn-accent btn-sm rounded-pill px-3">
+                                        <i class="fas fa-save me-1"></i> Save Changes
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- ACTION BUTTONS -->
+                            <div class="d-flex gap-2 mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.05);">
+                                {% if bug.status == 'Resolved' and not bug.is_user_notified %}
+                                    <form method="POST" action="{% url 'notify_user_resolved' bug.id %}" class="flex-grow-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm w-100 rounded-pill">
+                                            <i class="fas fa-envelope me-1"></i> Notify User
+                                        </button>
+                                    </form>
+                                {% elif bug.is_user_notified %}
+                                    <div class="flex-grow-1 text-center text-success small border border-success rounded-pill py-1">
+                                        <i class="fas fa-check-double me-1"></i> User Notified
+                                    </div>
+                                {% endif %}
+                                
+                                <form method="POST" action="{% url 'delete_bug' bug.id %}" onsubmit="return confirm('Are you sure you want to delete this bug? This action cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill" title="Delete Bug">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                <a href="https://github.com/derrickatsu1998/school-management-system" target="_blank" class="btn btn-outline-info btn-sm rounded-pill" title="Access Codebase">
+                                    <i class="fas fa-code"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    
                 </div>
             </div>
             {% empty %}
