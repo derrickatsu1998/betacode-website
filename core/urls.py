@@ -15,8 +15,12 @@ urlpatterns = [
     # SIMS API Endpoint
     path('api/receive-bug/', views.receive_bug_from_sims, name='receive_bug'),
 
+    # Developer Management
     path('developer/manage/', views.manage_developers, name='manage_developers'),
     path('developer/toggle-status/<int:user_id>/', views.toggle_developer_status, name='toggle_developer_status'),
+    path('developer/delete/<int:user_id>/', views.delete_developer, name='delete_developer'), # ✅ ADDED THIS LINE
+    
+    # Chat
     path('developer/chat/', views.chat_room, name='chat_room'),
     path('developer/api/chat/', views.chat_api, name='chat_api'),
 ]
