@@ -14,7 +14,6 @@
         .btn-accent:hover { background: #fbbf24; color: #0b1120; }
         .navbar { background: rgba(11, 17, 32, 0.95); border-bottom: 1px solid rgba(255,255,255,0.05); }
         
-        /* Form Input Styling */
         .form-control, .form-select {
             background-color: #0b1120 !important;
             color: #f8fafc !important;
@@ -25,7 +24,6 @@
             box-shadow: 0 0 0 0.25rem rgba(245, 158, 11, 0.25) !important;
         }
         
-        /* Status Indicator */
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
         .status-online { background-color: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
         .status-offline { background-color: #ef4444; }
@@ -33,7 +31,6 @@
 </head>
 <body>
 
-    <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg mb-4 py-3">
         <div class="container">
             <a class="navbar-brand fw-bold text-white" href="{% url 'developer_dashboard' %}">
@@ -57,7 +54,6 @@
             </button>
         </div>
 
-        <!-- Messages -->
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show bg-dark text-white border-secondary">
@@ -82,20 +78,14 @@
                         {% if dev.is_available %}Available{% else %}Busy / Offline{% endif %}
                     </p>
                     
-                    <!-- Push buttons to the bottom -->
                     <div class="mt-auto pt-3 border-top border-secondary">
                         <div class="d-flex gap-2">
-                            <!-- Toggle Status Button -->
                             <a href="{% url 'toggle_developer_status' dev.user.id %}" class="btn btn-sm btn-outline-warning flex-grow-1" title="Toggle Availability">
                                 <i class="fas fa-sync-alt me-1"></i> Toggle
                             </a>
-                            
-                            <!-- Admin Edit Link -->
                             <a href="/admin/auth/user/{{ dev.user.id }}/change/" target="_blank" class="btn btn-sm btn-outline-info" title="Edit in Django Admin">
                                 <i class="fas fa-edit"></i>
                             </a>
-
-                            <!-- Delete Button with Confirmation -->
                             <form method="POST" action="{% url 'delete_developer' dev.user.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete {{ dev.user.username }}? This action cannot be undone.');">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Developer">
@@ -149,7 +139,6 @@
                             {{ form.email }}
                         </div>
 
-                        <!-- ✅ UPDATED PASSWORD FIELDS -->
                         <div class="mb-3">
                             <label class="form-label text-light small fw-bold">Password</label>
                             {{ form.password1 }}
@@ -166,7 +155,7 @@
                             {{ form.role }}
                         </div>
 
-                        <!-- Errors (if any) -->
+                        <!-- ✅ Error Display -->
                         {% if form.errors %}
                             <div class="alert alert-danger bg-danger text-white border-0 py-2 small mt-3">
                                 <ul class="mb-0 ps-3">
@@ -191,6 +180,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- ✅ Script to keep the modal open if there are errors -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             {% if form.errors %}

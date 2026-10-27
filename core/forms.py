@@ -27,6 +27,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
 from .models import DeveloperProfile
 
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import get_user_model
+from .models import DeveloperProfile
+
 User = get_user_model()
 
 class DeveloperCreationForm(UserCreationForm):
@@ -47,13 +52,12 @@ class DeveloperCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Add dark theme classes to the auto-generated password fields
         self.fields['password1'].widget.attrs.update({'class': 'form-control bg-dark text-white border-secondary'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control bg-dark text-white border-secondary'})
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.is_staff = True # Gives them access to the Developer Console
+        user.is_staff = True 
         if commit:
             user.save()
             profile, _ = DeveloperProfile.objects.get_or_create(user=user)
