@@ -8,16 +8,16 @@ from django.conf import settings
 import requests
 import json
 
-from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404, redirect, render
 from .models import DeveloperProfile
+
+# ✅ CRITICAL IMPORTS - Make sure these are here!
+from .forms import DeveloperCreationForm
+from .models import ReceivedBugReport, DeveloperProfile, ChatMessage
+
 User = get_user_model()
 
-from .models import ChatMessage
-from django.http import JsonResponse
-import json
 
-# Import your model for receiving bugs
-from .models import ReceivedBugReport
 
 # ✅ Configurations
 SIMS_API_SECRET = "BetaCode_Super_Secret_Key_2026"
@@ -255,3 +255,28 @@ def chat_api(request):
         return JsonResponse({'messages': data})
 
     return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+
+
+
+@login_required(login_url='/login/')
+def delete_developer(request, user_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied.")
+    
+    if request.method == 'POST':
+        # Prevent users from deleting themselves
+        if request.user.id == user_id:
+            messages.error(request, "You cannot delete your own account.")
+            return redirect('manage_developers')
+
+        profile = get_object_or_404(DeveloperProfile, user_id=user_id)
+        username = profile.user.username
+        
+        # This deletes the User (which automatically cascades and deletes the DeveloperProfile)
+        profile.user.delete() 
+        
+        messages.success(request, f"Developer '{username}' has been deleted.")
+    
+    return redirect('manage_developers')
