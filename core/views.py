@@ -8,6 +8,9 @@ from django.conf import settings
 import requests
 import json
 
+from django.contrib.auth import get_user_model
+from .models import DeveloperProfile
+User = get_user_model()
 
 from .models import ChatMessage
 from django.http import JsonResponse
@@ -175,9 +178,9 @@ from .models import DeveloperProfile
 @login_required(login_url='/login/')
 def manage_developers(request):
     if not request.user.is_staff:
-        return HttpResponseForbidden("Access Denied.")
+        return HttpResponseForbidden("Access Denied. Staff only.")
     
-    developers = DeveloperProfile.objects.select_related('user').all()
+    developers = DeveloperProfile.objects.select_related('user').all().order_by('-role')
     
     if request.method == 'POST':
         form = DeveloperCreationForm(request.POST)
@@ -185,6 +188,10 @@ def manage_developers(request):
             form.save()
             messages.success(request, "New developer added successfully.")
             return redirect('manage_developers')
+        else:
+            # ✅ Print the errors to the terminal so you can see why it failed
+            print("FORM ERRORS:", form.errors)
+            messages.error(request, "Could not save developer. Please check the form for errors.")
     else:
         form = DeveloperCreationForm()
 

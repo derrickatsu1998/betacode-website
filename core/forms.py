@@ -23,25 +23,40 @@ class BugReportForm(forms.Form):
 
 
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import get_user_model
 from .models import DeveloperProfile
 
-class DeveloperCreationForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    role = forms.ChoiceField(choices=DeveloperProfile.ROLE_CHOICES)
+User = get_user_model()
 
-    class Meta:
+class DeveloperCreationForm(UserCreationForm):
+    role = forms.ChoiceField(
+        choices=DeveloperProfile.ROLE_CHOICES, 
+        widget=forms.Select(attrs={'class': 'form-select bg-dark text-white border-secondary'})
+    )
+
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name']
+        fields = ('username', 'email', 'first_name', 'last_name')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control bg-dark text-white border-secondary'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control bg-dark text-white border-secondary'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control bg-dark text-white border-secondary'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control bg-dark text-white border-secondary'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add dark theme classes to the auto-generated password fields
+        self.fields['password1'].widget.attrs.update({'class': 'form-control bg-dark text-white border-secondary'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control bg-dark text-white border-secondary'})
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
-        user.is_staff = True # Give them access to the console
+        user.is_staff = True # Gives them access to the Developer Console
         if commit:
             user.save()
-            # Update their profile role
-            profile = user.developer_profile
+            profile, _ = DeveloperProfile.objects.get_or_create(user=user)
             profile.role = self.cleaned_data['role']
             profile.save()
         return user
