@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Team Chat | BetaCode</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0b1120; color: #f8fafc; font-family: 'Inter', sans-serif; height: 100vh; display: flex; flex-direction: column; }
+        .navbar { background: rgba(11, 17, 32, 0.95); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .text-accent { color: #f59e0b !important; }
+        
+        .chat-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; max-width: 900px; margin: 0 auto; width: 100%; padding: 20px; }
+        .chat-box { flex: 1; overflow-y: auto; padding: 20px; background: #1e293b; border-radius: 12px 12px 0 0; border: 1px solid rgba(255,255,255,0.05); }
+        
+        .message-bubble { max-width: 70%; padding: 10px 15px; border-radius: 15px; margin-bottom: 15px; position: relative; word-wrap: break-word; }
+        .message-me { background: #f59e0b; color: #0b1120; margin-left: auto; border-bottom-right-radius: 2px; }
+        .message-other { background: #334155; color: #f8fafc; margin-right: auto; border-bottom-left-radius: 2px; }
+        
+        .sender-name { font-size: 0.75rem; font-weight: bold; margin-bottom: 3px; opacity: 0.8; }
+        .msg-time { font-size: 0.65rem; opacity: 0.7; margin-top: 5px; text-align: right; }
+        
+        .chat-input-area { display: flex; gap: 10px; padding: 15px; background: #1e293b; border-radius: 0 0 12px 12px; border: 1px solid rgba(255,255,255,0.05); border-top: none; }
+        .chat-input { background: #0b1120; border: 1px solid #334155; color: white; border-radius: 20px; }
+        .chat-input:focus { background: #0b1120; color: white; border-color: #f59e0b; box-shadow: none; }
+        .btn-send { background: #f59e0b; color: #0b1120; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .btn-send:hover { background: #fbbf24; }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg py-3 mb-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white" href="{% url 'developer_dashboard' %}">
+                <i class="fas fa-code me-2 text-accent"></i> BetaCode Console
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'manage_developers' %}" class="btn btn-outline-warning btn-sm rounded-pill px-3"><i class="fas fa-users-cog"></i> Team</a>
+                <a href="{% url 'developer_dashboard' %}" class="btn btn-outline-light btn-sm rounded-pill px-3">Bugs</a>
+                <a href="{% url 'staff_logout' %}" class="btn btn-danger btn-sm rounded-pill px-3">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="chat-container">
+        <!-- CHAT BOX -->
+        <div class="chat-box" id="chatBox">
+            {% for msg in chat_messages %}
+                <div class="message-bubble {% if msg.sender == request.user %}message-me{% else %}message-other{% endif %}">
+                    {% if msg.sender != request.user %}
+                    <div class="sender-name">{{ msg.sender.get_full_name|default:msg.sender.username }}</div>
+                    {% endif %}
+                    <div>{{ msg.message }}</div>
+                    <div class="msg-time">{{ msg.timestamp|date:"H:i" }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- CHAT INPUT -->
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" class="form-control chat-input" placeholder="Type a message..." autocomplete="off">
+            <button class="btn btn-send" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- JavaScript for AJAX Polling -->
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        // Get the ID of the last message rendered on the page
+        let lastMessageId = {{ chat_messages.last.id|default:0 }};
+        
+        // Scroll to bottom on load
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // CSRF Token for POST requests
+        const csrftoken = '{{ csrf_token }}';
+
+        function fetchNewMessages() {
+            fetch(`/developer/api/chat/?last_id=${lastMessageId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            appendMessage(msg);
+                            lastMessageId = msg.id;
+                        });
+                    }
+                })
+                .catch(err => console.error("Polling error:", err));
+        }
+
+        function appendMessage(msg) {
+            // Don't append if it's already there (simple check)
+            if(document.getElementById(`msg-${msg.id}`)) return;
+
+            const div = document.createElement('div');
+            div.id = `msg-${msg.id}`;
+            div.className = `message-bubble ${msg.is_me ? 'message-me' : 'message-other'}`;
+            
+            let senderHtml = msg.is_me ? '' : `<div class="sender-name">${msg.sender_name}</div>`;
+            
+            div.innerHTML = `
+                ${senderHtml}
+                <div>${msg.message}</div>
+                <div class="msg-time">${msg.timestamp}</div>
+            `;
+            
+            chatBox.appendChild(div);
+            
+            // Auto-scroll if user is at the bottom
+            const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 100;
+            if (isScrolledToBottom) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            chatInput.value = ''; // Clear input immediately
+
+            fetch(`/developer/api/chat/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    fetchNewMessages(); // Fetch immediately to show our own message
+                }
+            })
+            .catch(err => console.error("Send error:", err));
+        }
+
+        // Send on button click
+        sendBtn.addEventListener('click', sendMessage);
+
+        // Send on Enter key
+        chatInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Poll for new messages every 2 seconds
+        setInterval(fetchNewMessages, 2000);
+    </script>
+</body>
+</html>

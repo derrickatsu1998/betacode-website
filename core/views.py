@@ -8,6 +8,11 @@ from django.conf import settings
 import requests
 import json
 
+
+from .models import ChatMessage
+from django.http import JsonResponse
+import json
+
 # Import your model for receiving bugs
 from .models import ReceivedBugReport
 
@@ -197,3 +202,49 @@ def toggle_developer_status(request, user_id):
     profile.is_available = not profile.is_available
     profile.save()
     return redirect('manage_developers')
+
+
+
+
+
+@login_required(login_url='/login/')
+def chat_room(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied. Staff only.")
+    
+    # Fetch the last 50 messages for initial load
+    messages = ChatMessage.objects.select_related('sender').all()[:50]
+    return render(request, 'core/chat.html', {'chat_messages': messages})
+
+@login_required(login_url='/login/')
+def chat_api(request):
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            msg_text = data.get('message', '').strip()
+            if msg_text:
+                new_msg = ChatMessage.objects.create(sender=request.user, message=msg_text)
+                return JsonResponse({'status': 'success', 'message_id': new_msg.id})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+    elif request.method == 'GET':
+        # Get messages sent after a specific ID (for polling)
+        last_id = request.GET.get('last_id', 0)
+        new_messages = ChatMessage.objects.filter(id__gt=last_id).select_related('sender')
+        
+        data = []
+        for msg in new_messages:
+            data.append({
+                'id': msg.id,
+                'sender_name': msg.sender.get_full_name() or msg.sender.username,
+                'message': msg.message,
+                'timestamp': msg.timestamp.strftime('%H:%M'),
+                'is_me': msg.sender == request.user,
+            })
+        return JsonResponse({'messages': data})
+
+    return JsonResponse({'error': 'Invalid method'}, status=405)

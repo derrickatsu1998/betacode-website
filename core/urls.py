@@ -17,4 +17,6 @@ urlpatterns = [
 
     path('developer/manage/', views.manage_developers, name='manage_developers'),
     path('developer/toggle-status/<int:user_id>/', views.toggle_developer_status, name='toggle_developer_status'),
+    path('developer/chat/', views.chat_room, name='chat_room'),
+    path('developer/api/chat/', views.chat_api, name='chat_api'),
 ]
