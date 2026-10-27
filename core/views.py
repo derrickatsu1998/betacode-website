@@ -50,35 +50,17 @@ def developer_dashboard(request):
     if not request.user.is_staff:
         return HttpResponseForbidden("Access Denied. You are not a staff member.")
 
-    bugs = []
-    api_connected = False  
-    error_msg = ""
-
-    try:
-        headers = {'X-BetaCode-Secret': SIMS_API_SECRET}
-        response = requests.get(f"{SIMS_BASE_URL}/bugs/api/reports/", headers=headers, timeout=20)
-        
-        if response.status_code == 200:
-            bugs = response.json().get('bugs', [])
-            api_connected = True
-        else:
-            error_msg = f"SIMS API returned status {response.status_code}"
-    except requests.exceptions.ConnectionError:
-        error_msg = "Could not connect to the SIMS server. It might be asleep or offline."
-    except Exception as e:
-        error_msg = str(e)
-
-    if error_msg:
-        messages.error(request, error_msg)
-
-    # ✅ Fetch all developers to populate the "Assign To" dropdown
+    # ✅ FIX: Read directly from the BetaCode database
+    bugs = ReceivedBugReport.objects.all().order_by('-created_at')
+    
+    # Fetch all developers for the "Assign To" dropdown
     developers = User.objects.filter(is_staff=True)
 
     return render(request, 'core/bugs.html', {
         'bugs': bugs,
-        'api_connected': api_connected, 
-        'bug_count': len(bugs),
-        'developers': developers, # Added this so the template works
+        'api_connected': True, 
+        'bug_count': bugs.count(),
+        'developers': developers,
     })
 
 # ==========================================
