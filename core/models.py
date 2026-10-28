@@ -73,3 +73,8 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"{self.sender.username}: {self.message[:20]}"
+
+
+class ReceivedBugReport(models.Model):
+    sims_id = models.IntegerField(null=True, blank=True) # ✅ ADD THIS LINE
+    # ... (leave the rest of the fields as they are) ...

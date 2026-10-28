@@ -8,16 +8,9 @@ from django.conf import settings
 import requests
 import json
 
-from django.shortcuts import get_object_or_404, redirect, render
-from .models import DeveloperProfile
-
-# ✅ CRITICAL IMPORTS - Make sure these are here!
-from .forms import DeveloperCreationForm
+# Import your models
 from .models import ReceivedBugReport, DeveloperProfile, ChatMessage
-
-User = get_user_model()
-
-
+from .forms import DeveloperCreationForm
 
 # ✅ Configurations
 SIMS_API_SECRET = "BetaCode_Super_Secret_Key_2026"
@@ -58,7 +51,7 @@ def developer_dashboard(request):
     if not request.user.is_staff:
         return HttpResponseForbidden("Access Denied. You are not a staff member.")
 
-    # ✅ FIX: Read directly from the BetaCode database
+    # ✅ FIX: Read from the BetaCode database
     bugs = ReceivedBugReport.objects.all().order_by('-created_at')
     
     # Fetch all developers for the "Assign To" dropdown
@@ -94,6 +87,19 @@ def update_bug(request, bug_id):
             bug.assigned_to = None
 
         bug.save()
+        
+        # ✅ PUSH STATUS UPDATE BACK TO SIMS
+        try:
+            headers = {'X-BetaCode-Secret': SIMS_API_SECRET}
+            requests.post(
+                f"{SIMS_BASE_URL}/bugs/api/reports/", 
+                headers=headers, 
+                json={'bug_id': bug.sims_id, 'status': bug.status}, # ✅ CHANGED to sims_id
+                timeout=10
+            )
+        except Exception as e:
+            print("Failed to sync status to SIMS:", e)
+
         messages.success(request, f"Bug #{bug.id} updated successfully.")
     
     return redirect('developer_dashboard')
@@ -121,7 +127,8 @@ def notify_user_resolved(request, bug_id):
         # Tell the SIMS API to send the email to the reporter
         try:
             headers = {'X-BetaCode-Secret': SIMS_API_SECRET}
-            payload = {'bug_id': bug.id, 'reporter': bug.reporter_name}
+            # ✅ CHANGED to use sims_id
+            payload = {'bug_id': bug.sims_id, 'reporter': bug.reporter_name}
             
             response = requests.post(
                 f"{SIMS_BASE_URL}/bugs/api/notify-resolved/", 
@@ -141,39 +148,34 @@ def notify_user_resolved(request, bug_id):
             
     return redirect('developer_dashboard')
 
-# ==========================================
-# 3. EXTERNAL API ENDPOINTS
-# ==========================================
+@login_required(login_url='/login/')
+def resolve_bug_remote(request, bug_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied.")
 
-@csrf_exempt
-def receive_bug_from_sims(request):
-    if request.method == 'POST':
-        if request.headers.get('X-BetaCode-Secret') != SIMS_API_SECRET:
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+    try:
+        bug = get_object_or_404(ReceivedBugReport, id=bug_id)
+        headers = {'X-BetaCode-Secret': SIMS_API_SECRET}
+        response = requests.post(
+            f"{SIMS_BASE_URL}/bugs/api/reports/", 
+            headers=headers, 
+            json={'bug_id': bug.sims_id}, # ✅ CHANGED to sims_id
+            timeout=15
+        )
+        if response.status_code == 200:
+            bug.status = 'Resolved'
+            bug.save()
+            messages.success(request, "Bug marked as resolved in SIMS and BetaCode.")
+        else:
+            messages.error(request, "Failed to update bug status in SIMS.")
+    except Exception as e:
+        messages.error(request, f"Connection error: {e}")
         
-        try:
-            data = json.loads(request.body)
-            
-            bug = ReceivedBugReport.objects.create(
-                title=data.get('title'),
-                description=data.get('description'),
-                page_url=data.get('page_url'),
-                reporter_name=data.get('reporter'),
-                screenshot_url=data.get('screenshot'),
-                voice_note_url=data.get('voice_note'),
-            )
-            
-            return JsonResponse({'success': True, 'bug_id': bug.id}, status=201)
-            
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+    return redirect('developer_dashboard')
 
-    return JsonResponse({'error': 'Only POST method allowed'}, status=405)
-
-
-
-from .forms import DeveloperCreationForm
-from .models import DeveloperProfile
+# ==========================================
+# 3. DEVELOPER MANAGEMENT VIEWS
+# ==========================================
 
 @login_required(login_url='/login/')
 def manage_developers(request):
@@ -189,7 +191,7 @@ def manage_developers(request):
             messages.success(request, "New developer added successfully.")
             return redirect('manage_developers')
         else:
-            # ✅ Print the errors to the terminal so you can see why it failed
+            # ✅ Print errors to terminal so you can see why it failed
             print("FORM ERRORS:", form.errors)
             messages.error(request, "Could not save developer. Please check the form for errors.")
     else:
@@ -208,20 +210,37 @@ def toggle_developer_status(request, user_id):
     profile = get_object_or_404(DeveloperProfile, user_id=user_id)
     profile.is_available = not profile.is_available
     profile.save()
+    messages.success(request, f"Status updated for {profile.user.username}.")
     return redirect('manage_developers')
 
+@login_required(login_url='/login/')
+def delete_developer(request, user_id):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Access Denied.")
+    
+    if request.method == 'POST':
+        if request.user.id == user_id:
+            messages.error(request, "You cannot delete your own account.")
+            return redirect('manage_developers')
 
+        profile = get_object_or_404(DeveloperProfile, user_id=user_id)
+        username = profile.user.username
+        profile.user.delete() 
+        messages.success(request, f"Developer '{username}' has been deleted.")
+    
+    return redirect('manage_developers')
 
-
+# ==========================================
+# 4. CHAT VIEWS
+# ==========================================
 
 @login_required(login_url='/login/')
 def chat_room(request):
     if not request.user.is_staff:
         return HttpResponseForbidden("Access Denied. Staff only.")
     
-    # Fetch the last 50 messages for initial load
-    messages = ChatMessage.objects.select_related('sender').all()[:50]
-    return render(request, 'core/chat.html', {'chat_messages': messages})
+    messages_list = ChatMessage.objects.select_related('sender').all()[:50]
+    return render(request, 'core/chat.html', {'chat_messages': messages_list})
 
 @login_required(login_url='/login/')
 def chat_api(request):
@@ -239,7 +258,6 @@ def chat_api(request):
             return JsonResponse({'error': str(e)}, status=400)
 
     elif request.method == 'GET':
-        # Get messages sent after a specific ID (for polling)
         last_id = request.GET.get('last_id', 0)
         new_messages = ChatMessage.objects.filter(id__gt=last_id).select_related('sender')
         
@@ -256,27 +274,32 @@ def chat_api(request):
 
     return JsonResponse({'error': 'Invalid method'}, status=405)
 
+# ==========================================
+# 5. EXTERNAL API ENDPOINTS
+# ==========================================
 
-
-
-
-@login_required(login_url='/login/')
-def delete_developer(request, user_id):
-    if not request.user.is_staff:
-        return HttpResponseForbidden("Access Denied.")
-    
+@csrf_exempt
+def receive_bug_from_sims(request):
     if request.method == 'POST':
-        # Prevent users from deleting themselves
-        if request.user.id == user_id:
-            messages.error(request, "You cannot delete your own account.")
-            return redirect('manage_developers')
+        if request.headers.get('X-BetaCode-Secret') != SIMS_API_SECRET:
+            return JsonResponse({'error': 'Unauthorized'}, status=401)
+        
+        try:
+            data = json.loads(request.body)
+            
+            bug = ReceivedBugReport.objects.create(
+                sims_id=data.get('sims_id'), # ✅ ADDED: Save the SIMS ID
+                title=data.get('title'),
+                description=data.get('description'),
+                page_url=data.get('page_url'),
+                reporter_name=data.get('reporter'),
+                screenshot_url=data.get('screenshot'),
+                voice_note_url=data.get('voice_note'),
+            )
+            
+            return JsonResponse({'success': True, 'bug_id': bug.id}, status=201)
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
 
-        profile = get_object_or_404(DeveloperProfile, user_id=user_id)
-        username = profile.user.username
-        
-        # This deletes the User (which automatically cascades and deletes the DeveloperProfile)
-        profile.user.delete() 
-        
-        messages.success(request, f"Developer '{username}' has been deleted.")
-    
-    return redirect('manage_developers')
+    return JsonResponse({'error': 'Only POST method allowed'}, status=405)
